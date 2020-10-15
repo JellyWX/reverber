@@ -1,0 +1,72 @@
+<html lang="EN">
+<head>
+    <meta charset="UTF-8">
+
+    <title>Reverber</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+            integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/howler@2.2.0/dist/howler.min.js"></script>
+
+</head>
+<body>
+    <h1>Reverber</h1>
+    <form>
+        <label>
+            Enter the URL to reverb:
+            <input type="text" name="url" id="url">
+        </label>
+    </form>
+
+    <span id="status">Ready!</span>
+
+    <div id="results">
+
+    </div>
+
+    <script>
+
+const status = $('#status');
+let howls = {};
+let id = 0;
+
+$('form').on('submit', function (e) {
+    e.preventDefault();
+
+    let url = $('#url').val();
+
+    status.text('Processing...');
+
+    $.ajax({
+        url: "/reverb",
+        type: "POST",
+        contentType: "application/json; charset=utf-8",
+        data: JSON.stringify({url: url}),
+    }).done(function (data) {
+        status.text('Client Processing...');
+
+        howls[id] = new Howl({
+            src: [`data:application/octet-stream;base64,${data}`],
+            format: 'ogg'
+        });
+
+        $('div#results').append(`<button data-id="${id}">Play ${id}</button>`);
+
+        id += 1;
+
+        status.text('Ready!');
+    });
+});
+
+$('div#results').on('click', 'button', function () {
+    Howler.stop();
+
+    let id = $(this).data("id");
+
+    howls[id].play();
+});
+
+    </script>
+</body>
+</html>
