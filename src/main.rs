@@ -22,6 +22,10 @@ use futures::stream::once;
 #[derive(Deserialize)]
 struct JsonRequest {
     url: String,
+    delay: u8,
+    decay: f64,
+    out_gain: f64,
+    tempo: f64,
 }
 
 #[get("/")]
@@ -53,9 +57,13 @@ async fn reverb(form: web::Json<JsonRequest>) -> Result<HttpResponse, Error> {
         .arg("error")
         .arg("-vn")
         .arg("-filter:a")
-        .arg("aecho=1.0:0.7:20:0.5,asetrate=48000*0.85,aresample=48000*0.85,atempo=0.85")
-        .arg("-b:a")
-        .arg("48000")
+        .arg(format!(
+            "aecho=1.0:{out_gain}:{delay}:{decay},asetrate=48000*{tempo},aresample=48000*{tempo},atempo={tempo}",
+            out_gain = form.out_gain,
+            delay = form.delay,
+            decay = form.decay,
+            tempo = form.tempo,
+        ))
         .arg("-f")
         .arg("ogg")
         .arg("pipe:")

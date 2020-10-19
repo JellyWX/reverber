@@ -9,62 +9,90 @@
             crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/howler@2.2.0/dist/howler.min.js"></script>
 
+    <script src="/static/js/jquery-ui.min.js"></script>
+
+    <link href="/static/css/regular.min.css" rel="stylesheet">
+    <link href="/static/css/jquery-ui.min.css" rel="stylesheet">
 </head>
 <body>
     <h1>Reverber</h1>
     <form>
         <label>
             Enter the URL to reverb:
-            <input type="text" name="url" id="url">
+            <input type="text" name="url">
         </label>
+
+        Other Settings:
+        <label>
+            Echo Delay
+            <input type="number" name="delay" min="0" max="1000" step="5" value="20">
+        </label>
+        <label>
+            Echo Decay
+            <input type="number" name="decay" min="0" max="1" step="0.01" value="0.5">
+        </label>
+        <label>
+            Echo Out Gain
+            <input type="number" name="out_gain" min="0" max="1" step="0.01" value="0.7">
+        </label>
+        <label>
+            Tempo Scale
+            <input type="number" name="tempo" min="0" max="2" step="0.01" value="0.85">
+        </label>
+
+        <input type="submit">
     </form>
 
     <span id="status">Ready!</span>
 
-    <div id="results">
-
-    </div>
-
     <script>
 
 const status = $('#status');
-let howls = {};
-let id = 0;
+let howler;
+
+function form_to_json(form) {
+    let obj = {};
+
+    $(form).find('input').each(function (_index, field) {
+        let field_val = $(field).val();
+        let field_type = $(field).attr('type');
+        let field_name = $(field).attr('name');
+
+        if (field_type === 'number') {
+            obj[field_name] = Number(field_val);
+        }
+        else {
+            obj[field_name] = field_val;
+        }
+    });
+
+    return obj;
+}
 
 $('form').on('submit', function (e) {
     e.preventDefault();
 
-    let url = $('#url').val();
+    status.text('Client pre-processing...');
 
-    status.text('Processing...');
+    let json = form_to_json($('form'));
+
+    status.text('Server Processing...');
 
     $.ajax({
         url: "/reverb",
         type: "POST",
         contentType: "application/json; charset=utf-8",
-        data: JSON.stringify({url: url}),
+        data: JSON.stringify(json),
     }).done(function (data) {
         status.text('Client Processing...');
 
-        howls[id] = new Howl({
+        howler = new Howl({
             src: [`data:application/octet-stream;base64,${data}`],
             format: 'ogg'
         });
 
-        $('div#results').append(`<button data-id="${id}">Play ${id}</button>`);
-
-        id += 1;
-
         status.text('Ready!');
     });
-});
-
-$('div#results').on('click', 'button', function () {
-    Howler.stop();
-
-    let id = $(this).data("id");
-
-    howls[id].play();
 });
 
     </script>
